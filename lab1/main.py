@@ -37,4 +37,7 @@ schedule = lr_scheduler.ExponentialLR(adam, gamma=0.9)
 
 # train(epoch, adam , model, lossfunction, train_loader, schedule, torch.device('cpu'))
 
-testFunc(model, lossfunction, eval_loader, torch.device('cpu'))
+model.load_state_dict(torch.load('MLP.8.pth'))
+
+# testFunc(model, lossfunction, eval_loader, torch.device('cpu'))
+interpolate(model, lossfunction, eval_loader, torch.device('cpu'))

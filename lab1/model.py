@@ -34,3 +34,19 @@ class autoencoderMLP4Layer(nn.Module):
         X = torch.sigmoid(X)
         
         return X
+    
+    def encode(self, X):
+        # encoder
+        X = self.fc1(X)
+        X = F.relu(X)
+        X = self.fc2(X)
+        X = F.relu(X)
+        return X
+        
+    def decode(self, X):
+        # decoder
+        X = self.fc3(X)
+        X = F.relu(X)
+        X = self.fc4(X)
+        X = torch.sigmoid(X)
+        return X

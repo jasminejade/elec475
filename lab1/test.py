@@ -1,5 +1,5 @@
 from train import *
-import torchvision.transforms.functional as tF
+import torch
 def testFunc(model, loss_fn, loader, device):
     model.eval()
     loss_fn = loss_fn
@@ -9,6 +9,7 @@ def testFunc(model, loss_fn, loader, device):
 
         for i, (imgs, labels) in enumerate(loader):
             imgs = imgs.view(imgs.size(0), -1)
+            imgs = imgs + torch.rand(imgs.size()) # step 5
             imgs = imgs.to(device=device)
             outputs = model(imgs)
             loss = loss_fn(imgs, outputs)
@@ -22,31 +23,74 @@ def testFunc(model, loss_fn, loader, device):
                 item = item.reshape(-1,28,28)
                 ax2.imshow(item[0], cmap='gray')
             plt.show()
-            # for i, item in enumerate(imgs):
-            #     # item.permute()
-            #     item.detach()
-            #     # item = tF.to_pil_image(item)
-            #     plt.imshow(np.asarray(item))
-            #     plt.show()
             
-            # for i, item in enumerate(output):
-            #     item.detach()
-            #     # item = tF.to_pil_image(item)
-            #     plt.imshow(item)
-                
-            # imgs.reshape(-1, 28, 28)
-            # output.reshape(-1, 28, 28)
             
-            # outputs= outputs.view(outputs.size(0), 1, 28, 28).cpu().data
-            # imgs= imgs.view(outputs.size(0), 1, 28, 28).cpu().data
+def interpolate(model, loss_fn, loader, device):
+    model.eval()
+    
+    loss_fn = loss_fn
+    losses = []
+    n = 8 # number of steps for interpolation
+    train_transform = transforms.Compose([transforms.ToTensor()]) 
+    test_set = MNIST('./data/mnist', train=True, download=True, transform=train_transform) 
+    with torch.no_grad():
 
-            # f = plt.figure()
-            # f.add_subplot(1,2,1)
-            # plt.imshow(imgs, cmap='gray')
-            # f.add_subplot(1,2,2)
-            # plt.imshow(outputs, cmap='gray')
-            # plt.show()
+        im1 = test_set[4][0]
+        im2 = test_set[12][0]
+        
+        image1 = im1.view(im1.size(0), -1)
+        image1 = image1.to(device=device)
+        
+        image2 = im2.view(im2.size(0), -1)
+        image2 = image2.to(device=device)
+        
+        print(type(image1))
+        # pass images through encoder, returning their bottleneck tensors
+        encoded1 = model.encode(image1)
+        encoded2 = model.encode(image2)
+        fig, ax = plt.subplots(1, 10)
+        ax[0].imshow(im1[0], cmap='gray')
+        for x in range(n):
+            weight = x/n
+            interpImg = torch.lerp(encoded1, encoded2, weight)
+            output = model.decode(interpImg)
+            output = output.detach().cpu().numpy()
+            interpImg = output.reshape(28, 28)
+            ax[x+1].imshow(interpImg, cmap='gray')
+        ax[9].imshow(im2[0], cmap='gray')
+        plt.show()
+
+            # for _, item in enumerate(interpImg.data):
+            #     item = interpImg.reshape(1,28*28)
+            #     plt.imshow(item[0])
+
+            #plt.imshow(interpImg.data)
+        # decoded= model.decode(interpImg)
+        
+        # plt.imshow(interpImg, cmap='gray')
             
-              
-model = autoencoderMLP4Layer()
-model.load_state_dict(torch.load('MLP.8.pth'))
+
+        # for batch, _ in loader:
+        #     image1 = model.encode(batch[0].view(batch[0].size(0), -1))
+        #     image2 = model.encode(batch[1].view(batch[1].size(0), -1))
+
+    
+        # fig = plt.figure()
+        # for i in range(9):
+        #     a = i/8
+        #     # interpImg = torch.lerp(image1[0], image2[0], a)
+        #     interpImg = torch.lerp(image1, image2, a)
+        #     plt.imshow(interpImg, cmap='gray')
+        
+        # for _, item in enumerate(interpImg.data):
+        #     item = item.detach().numpy()
+        #     print(item.shape)
+        #     plt.imshow(item, cmap='gray')
+        plt.show()
+        
+
+            
+
+        
+                
+                
