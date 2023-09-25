@@ -1,5 +1,7 @@
-from train import *
 import torch
+
+from train import *
+
 def testFunc(model, loss_fn, loader, device):
     model.eval()
     loss_fn = loss_fn
@@ -9,7 +11,10 @@ def testFunc(model, loss_fn, loader, device):
 
         for i, (imgs, labels) in enumerate(loader):
             imgs = imgs.view(imgs.size(0), -1)
-            imgs = imgs + torch.rand(imgs.size()) # step 5
+            
+            # uncomment for step 5
+            # imgs = imgs + torch.rand(imgs.size())
+            
             imgs = imgs.to(device=device)
             outputs = model(imgs)
             loss = loss_fn(imgs, outputs)
