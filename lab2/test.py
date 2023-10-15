@@ -9,7 +9,7 @@ import AdaIN_net as net
 if __name__ == '__main__':
 
 	image_size = 512
-	device = 'cpu'
+	device = 'cuda'
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-content_image', type=str, help='test image')

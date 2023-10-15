@@ -4,36 +4,36 @@ from pathlib import Path
 import torch
 import sys
 import tqdm
-import torchvision.models as models
-import intel_extension_for_pytorch as ipex
 
 from torchvision import transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, BatchSampler
 from torch.optim import lr_scheduler
+
 
 from custom_dataset import *
 from AdaIN_net import *
+from sampler import *
 
 
 def train_transform():
-    transforms_list = [
-        transforms.resize(size=(512,512)),
+    transforms_list = transforms.Compose([
+        transforms.Resize(size=(512,512)),
         transforms.RandomCrop(256),
         transforms.ToTensor()
-    ]
+
+    ])
     return transforms_list
 
 
-def train():
+def train(content_iter, style_iter, adam, schedule, network, epochs, batch):
     content_weight = 1.9
     style_weight = 10.0
     losses_train = []
-    for i in tqdm.tqdm(epochs):
-        content_images = next(content_iter).to(device=device)
-        style_images = next(style_iter).to(device=device)
-        while content_images is not None:
-
-            
+    loss_train=0
+    for i in tqdm.tqdm(range(epochs)):
+        for b in range(batch):
+            content_images = next(iter(content_iter)).to(device=device)
+            style_images = next(iter(style_iter)).to(device=device)
             loss_c, loss_s = network(content_images, style_images) # this is forward
             loss_c = content_weight * loss_c
             loss_s = style_weight * loss_s
@@ -41,29 +41,52 @@ def train():
             adam.zero_grad()
             loss.backward()
             adam.step()
-            losses_train += loss.item()
-    schedule.step()
+            loss_train += loss.item()
+        schedule.step()
+        losses_train += [loss_train / len(content_iter)]
     torch.save(network.decoder.state_dict(), decoderModel)
 
-params = sys.argv[1:]
-print (params)
-content_dir = params[1]
 
-style_dir = params[3]
+# params = sys.argv[1:]
+# print (params)
+# content_dir = params[1]
+#
+# style_dir = params[3]
+#
+# gamma= float(params[5])
+#
+# epochs = int(params[7])
+#
+# batch = int(params[9])
+#
+# encoderModel = params[11]
+#
+# decoderModel = params[13]
+#
+# decoder_PNG = params[15]
+#
+# cuda = params[17]
+#
+# save_model_interval=1000
 
-gamma= params[5]
 
-epochs = params[7]
+content_dir = str("D:/475/elec475/lab2/datasets/COCO100/")
 
-batch = params[9]
+style_dir = str("D:/475/elec475/lab2/datasets/wikiart100/")
 
-encoderModel = params[11]
+gamma= float(1.0)
 
-decoderModel = params[13]
+epochs = int(20)
 
-decoder_PNG = params[15]
+batch = int(20)
 
-cuda = params[17]
+encoderModel = "encoder.pth"
+
+decoderModel = "decoder.pth"
+
+decoder_PNG = "decoder.png"
+
+cuda = 'Y'
 
 save_model_interval=1000
 
@@ -71,7 +94,7 @@ save_model_interval=1000
 ['-content_dir', './../../../datasets/COCO100/', '-style_dir', './../../../datasets/wikiart100/', '-gamma', '1.0', '-e', '20', '-b', '20', '-l', 'encoder.pth', '-s', 'decoder.pth', '-p', 'decoder.png', '-cuda', 'Y']
 
 '''
-device = torch.device('cpu')
+device = torch.device('cuda')
 model = encoder_decoder()
 decoder_model = model.decoder
 encoder_model = model.encoder
@@ -89,9 +112,14 @@ transform_style = train_transform()
 content_data = custom_dataset(content_dir, transform_content)
 style_data = custom_dataset(style_dir, transform_style)
 
-content_iter = iter(DataLoader(content_data, batch_size=batch, shuffle=True))
-style_iter = iter(DataLoader(style_data, batch_size=batch, shuffle=True))
+
+# shuffle=True,
+#   sampler=InfiniteSamplerWrapper(content_data)
+content_iter = (DataLoader(content_data, batch_size=batch, shuffle=True))
+style_iter = (DataLoader(style_data, batch_size=batch, shuffle=True))
 
 adam = torch.optim.Adam(network.decoder.parameters(), lr=1e-3, weight_decay=1e-5)
 schedule = lr_scheduler.ExponentialLR(adam, gamma=gamma)
+
+train(content_iter, style_iter, adam, schedule, network, epochs, batch)
 
