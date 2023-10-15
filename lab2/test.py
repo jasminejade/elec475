@@ -9,7 +9,7 @@ import AdaIN_net as net
 if __name__ == '__main__':
 
 	image_size = 512
-	device = 'cuda'
+	device = 'cpu'
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-content_image', type=str, help='test image')
@@ -56,7 +56,8 @@ if __name__ == '__main__':
 		style_tensor = style_tensor.cuda()
 	else:
 		print('using cpu ...')
-
+	print("in tensor", input_tensor)
+	print("style tensor", style_tensor)
 	out_tensor = None
 	with torch.no_grad():
 		out_tensor = model(input_tensor, style_tensor, alpha)

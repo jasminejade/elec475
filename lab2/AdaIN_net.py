@@ -164,12 +164,10 @@ class AdaIN_net(nn.Module):
             return loss_c, loss_s
         else:  # inference
             #
-            style_features = self.encode(style)
             
             t = self.adain(content_features, style_features[-1])
             t = alpha*t + (1-alpha) * content_features
             
             g_t = self.decoder(t)
-            feat = self.encode(g_t)
-            
-            return self.decode(feat)
+
+            return g_t
