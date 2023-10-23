@@ -97,11 +97,11 @@ def train(content_iter, style_iter, adam, schedule, network, epochs, batch):
 # save_model_interval=1000
 
 
-content_dir = str("D:/475/elec475/lab2/datasets/COCO10k/")
+content_dir = str("D:/475/elec475/lab2/datasets/COCO1k/")
 
-style_dir = str("D:/475/elec475/lab2/datasets/wikiart10k/")
+style_dir = str("D:/475/elec475/lab2/datasets/wikiart1k/")
 
-gamma= float(1.0)
+gamma= float(0.9)
 
 epochs = int(20)
 
@@ -145,7 +145,7 @@ style_data = custom_dataset(style_dir, transform_style)
 content_iter = (DataLoader(content_data, batch_size=batch, shuffle=True))
 style_iter = (DataLoader(style_data, batch_size=batch, shuffle=True))
 
-adam = torch.optim.Adam(network.decoder.parameters(), lr=1e-3, weight_decay=1e-5)
+adam = torch.optim.Adam(network.decoder.parameters(), lr=1e-5, weight_decay=5e-5)
 schedule = lr_scheduler.ExponentialLR(adam, gamma=gamma)
 
 train(content_iter=content_iter, style_iter=style_iter, adam=adam, schedule=schedule, network=network, epochs=epochs, batch=batch)
