@@ -10,7 +10,6 @@ from model import *
 from test import *
 
 parser = argparse.ArgumentParser()
-
 parser.add_argument('-l', type=str, default="MLP.8.pth") # trained model
 parser.add_argument('-z', type=int, default=8) # bottleneck
 parser.add_argument('-e', type=int, default=50) # epochs
@@ -28,8 +27,8 @@ eval_loader = DataLoader(eval_set, batch_size=args.e, shuffle=False)
 
 lossfunction = MSELoss()
 model = autoencoderMLP4Layer()
-model.load_state_dict(torch.load(args.l))
+model.load_state_dict(torch.load(args.l)) # instantiate model
 
-testFunc(model, lossfunction, eval_loader, device) # step 4
-testWithNoise(model, lossfunction, eval_loader, device) # step 5
-interpolate(model, lossfunction, eval_set, device) # step 6
+
+test(model, eval_set, device) # step 4 & 5
+interpolate(model, eval_set, device) # step 6
