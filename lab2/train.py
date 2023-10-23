@@ -30,10 +30,14 @@ def train(content_iter, style_iter, adam, schedule, network, epochs, n):
         loss_train = 0
         loss_train_c = 0
         loss_train_s = 0
+        style_weight=3
+        content_weight = 1
         for b in range(n):
             content_images = next(iter(content_iter)).to(device=device)
             style_images = next(iter(style_iter)).to(device=device)
             loss_c, loss_s = network(content_images, style_images) # this is forward
+            loss_c = loss_c * content_weight
+            loss_s = loss_s * style_weight
             loss = loss_c + loss_s
 
             adam.zero_grad()
@@ -46,8 +50,8 @@ def train(content_iter, style_iter, adam, schedule, network, epochs, n):
 
         schedule.step()
         losses_train += [loss_train / n]
-        losses_c += [loss_train_c / n]
-        losses_s += [loss_train_s / n]
+        losses_c += [loss_train_c / (n*content_weight)]
+        losses_s += [loss_train_s / (n*style_weight)]
         print("Overall:", losses_train[-1], ", Content:", losses_c[-1], ", Style:", losses_s[-1])
 
     torch.save(network.decoder.state_dict(), args.decoder_pth)
