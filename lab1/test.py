@@ -125,7 +125,7 @@ def interpolate(model, eval_set, device):
             output = output.detach().cpu().numpy()
             interpImg = output.reshape(28, 28)
 
-            ax[x+1].imshow(interpImg, cmap='gray')
+            ax[x+1].imshow(interpImg, cmap='gray') # plot linear inteSrpolation
 
         ax[9].imshow(im2[0], cmap='gray') # plot second image
         plt.show()

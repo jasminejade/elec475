@@ -44,3 +44,4 @@ class autoencoderMLP4Layer(nn.Module):
         X = self.fc4(X)
         X = torch.sigmoid(X)
         return X
+    

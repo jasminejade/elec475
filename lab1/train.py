@@ -75,3 +75,4 @@ schedule = lr_scheduler.ExponentialLR(adam, gamma=0.9)
 device = torch.device('cpu')
 
 train(epoch, adam , model, lossfunction, train_loader, schedule, device)
+
