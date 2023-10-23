@@ -1,6 +1,6 @@
 import torch
 import datetime
-import sys
+import argparse
 
 from matplotlib import pyplot as plt
 from torchvision.datasets import MNIST
@@ -40,19 +40,26 @@ def train(n_epochs, optimizer, model, loss_fn, train_loader, scheduler, device):
         
     summary(model, (1, 28*28))
 
-    torch.save(model.state_dict(), 'MLP.8.pth')
+    torch.save(model.state_dict(), args.s)
     
     plt.plot(losses_train)
     plt.xlabel('epochs')
     plt.ylabel('losses')
     
-    plt.savefig('loss.MLP.8.png')
+    plt.savefig(args.p)
     plt.show()
 
-params = sys.argv[1:]
-bottleneck = int(params[1])
-epoch = int(params[3])
-batch = int(params[5])
+parser = argparse.ArgumentParser()
+parser.add_argument('-s', type=str, default='MLP.8.pth') # model
+parser.add_argument('-p', type=str, default='loss.MLP.8.png') # loss plot
+parser.add_argument('-z', type=int, default=8) # bottleneck
+parser.add_argument('-e', type=int, default=50) # epochs
+parser.add_argument('-b', type=int, default=2048) # batch
+args = parser.parse_args()
+
+bottleneck = args.z
+epoch = args.e
+batch = args.b
 
 train_transform = transforms.Compose([transforms.ToTensor()]) 
 train_set = MNIST('./data/mnist', train=True, download=True, transform=train_transform) 

@@ -1,11 +1,8 @@
-import numpy as np
+
 import torch
-import datetime
+
 import torch.nn.functional as F
 
-from matplotlib import pyplot as plt
-from torchvision.datasets import MNIST
-from torchvision import transforms
 from torch import nn
 
 class autoencoderMLP4Layer(nn.Module):
