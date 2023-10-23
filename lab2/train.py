@@ -58,21 +58,21 @@ def train(content_iter, style_iter, adam, schedule, network, epochs, n):
     ax.plot(losses_train, label='content + style')
     ax.plot(losses_c, label='content')
     ax.plot(losses_s, label='style')
-    fig.suptitle(f'loss plot, {n} dataset')
+    fig.suptitle(f'loss plot, {n*args.batch} dataset')
     ax.legend()
 
     plt.savefig('loss.AdaIN.png')
     plt.show()
 
-content_dir = str("D:/475/elec475/lab2/datasets/COCO1k/")
-style_dir = str("D:/475/elec475/lab2/datasets/wikiart1k/")
+content_dir = str("D:/475/elec475/lab2/datasets/COCO10k/")
+style_dir = str("D:/475/elec475/lab2/datasets/wikiart10k/")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--content_dir', type=str, default=content_dir)
 parser.add_argument('--style_dir', type=str, default=style_dir)
 parser.add_argument('--gamma', type=float, default=0.9)
 parser.add_argument('-epochs', type=int, default=20)
-parser.add_argument('-batch', type=int, default=20)
+parser.add_argument('-batch', type=int, default=40)
 parser.add_argument('--encoder_pth', type=str, default="encoder.pth") # vgg
 parser.add_argument('--decoder_pth', type=str, default="decoder.pth")
 parser.add_argument('--loss_plot', type=str, default="loss.AdaIN.png")
@@ -95,7 +95,7 @@ transform_style = train_transform()
 
 content_data = custom_dataset(args.content_dir, transform_content)
 style_data = custom_dataset(args.style_dir, transform_style)
-n = len(content_data)
+n = int(len(content_data)/args.batch)
 
 content_iter = (DataLoader(content_data, batch_size=args.batch, shuffle=True))
 style_iter = (DataLoader(style_data, batch_size=args.batch, shuffle=True))
