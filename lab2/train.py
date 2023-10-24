@@ -30,7 +30,7 @@ def train(content_iter, style_iter, adam, schedule, network, epochs, n):
         loss_train = 0
         loss_train_c = 0
         loss_train_s = 0
-        style_weight=3
+        style_weight = 3
         content_weight = 1
         for b in range(n):
             content_images = next(iter(content_iter)).to(device=device)
