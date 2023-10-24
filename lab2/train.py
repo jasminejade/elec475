@@ -30,7 +30,7 @@ def train(content_iter, style_iter, adam, schedule, network, epochs, n):
         loss_train = 0
         loss_train_c = 0
         loss_train_s = 0
-        style_weight = 3
+        style_weight = 5
         content_weight = 1
         for b in range(n):
             content_images = next(iter(content_iter)).to(device=device)
@@ -49,7 +49,7 @@ def train(content_iter, style_iter, adam, schedule, network, epochs, n):
             loss_train_s += loss_s.item()
 
         schedule.step()
-        losses_train += [loss_train / n]
+        losses_train += [loss_train / (n*(style_weight+content_weight))]
         losses_c += [loss_train_c / (n*content_weight)]
         losses_s += [loss_train_s / (n*style_weight)]
         print("Overall:", losses_train[-1], ", Content:", losses_c[-1], ", Style:", losses_s[-1])
@@ -68,8 +68,8 @@ def train(content_iter, style_iter, adam, schedule, network, epochs, n):
     plt.savefig('loss.AdaIN.png')
     plt.show()
 
-content_dir = str("D:/475/elec475/lab2/datasets/COCO10k/")
-style_dir = str("D:/475/elec475/lab2/datasets/wikiart10k/")
+content_dir = str("D:/475/elec475/lab2/datasets/COCO1k/")
+style_dir = str("D:/475/elec475/lab2/datasets/wikiart1k/")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--content_dir', type=str, default=content_dir)
