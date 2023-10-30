@@ -1,8 +1,9 @@
+import torch
 import torch.nn as nn
 
 from torchvision import transforms
 
-class encoder_decoder:
+class VGG:
     
     # vgg backened, encoder from lab2
     encoder = nn.Sequential(
@@ -40,36 +41,14 @@ class encoder_decoder:
     )
     
     # frontend classification, to be implemented by us
-    decoder = nn.Sequential(
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(512, 256, (3, 3)),
-        nn.ReLU(),
-        nn.Upsample(scale_factor=2, mode='nearest'),
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(256, 256, (3, 3)),
-        nn.ReLU(),
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(256, 256, (3, 3)),
-        nn.ReLU(),
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(256, 256, (3, 3)),
-        nn.ReLU(),
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(256, 128, (3, 3)),
-        nn.ReLU(),
-        nn.Upsample(scale_factor=2, mode='nearest'),
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(128, 128, (3, 3)),
-        nn.ReLU(),
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(128, 64, (3, 3)),
-        nn.ReLU(),
-        nn.Upsample(scale_factor=2, mode='nearest'),
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(64, 64, (3, 3)),
-        nn.ReLU(),
-        nn.ReflectionPad2d((1, 1, 1, 1)),
-        nn.Conv2d(64, 3, (3, 3)),
+    classifier = nn.Sequential(
+        nn.Linear(512 * 7 * 7, 4096),
+        nn.ReLU(True),
+        nn.Dropout(0.5),
+        nn.Linear(4096, 4096),
+        nn.ReLU(True),
+        nn.Dropout(0.5),
+        nn.Linear(4096, 100), #Output 1xC size tensor for classification
     )
 
 
@@ -78,60 +57,61 @@ class model(nn.Module):
     def __init__(self, backend, frontend=None):
         super(model, self).__init__()
         self.backend = backend  # encoder
-        self.frontend = frontend  # decoder
-        
-        # freeze encoder weights
+        # freeze backend weights
         for param in self.backend.parameters():
             param.requires_grad = False
-            
-        # access intermediate encoder steps if needed for computation?
-        
+
+        self.frontend = frontend  # decoder
+
         if self.frontend is not None:
             pass
         else:
-            self.frontend = encoder_decoder.decoder
-            
-            # initalize decoder weights
+            self.frontend = VGG.classifier
+            # initalize frontend weights
             for param in self.frontend.parameters():
                 nn.init.normal_(param, mean=0.0, std=0.0)
-        
+
         self.mse_loss = nn.MSELoss()
-    
+        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
+
+
     def encode(self, X):
-        # access nintermedate steps 
-        return None
-    
-    def decode(self, X):
         return self.backend(X)
 
-    
-# frontend takes the backend as input, applies a number of layers 
-# and outputs a 1xC tensor where C is the number of class labels in the dataset
-class FrontEnd(model):
-    
-    def __init__(self, backend, frontend=None):
-        super().__init__(self, backend, frontend)  # inherit methods and properties from model
-        self.backend = backend
-        self.frontend = frontend
-    
+    def calc_loss(self, input, target):
+        assert (input.size() == target.size())
+        assert (target.requires_grad is False)
+        # input_mean, input_std = torch.mean(input)
+        # target_mean, target_std = torch.std(target)
+        return self.mse_loss(input, target)
+
+    def classify(self, X):
+        out = self.features(X)
+        out = self.avgpool(out)
+        out = torch.flatten(out, 1)
+        out = self.classifier(out) #Classifier is backend
+        return out
+
     # implementation of classification frontend
     # @params
     #   X: the backend bottleneck
     # @returns
     #   1xC Tensor
-    def implement(self, X):
-        
-        # apply a number of layers
-        
-        C = int # number of class labels in dataset
-        
-        transforms_list = [
-            transforms.Resize(size=(1,C)),
-            transforms.RandomCrop(256),
-            transforms.ToTensor()
-        ]
-        
-        return transforms.Compose(transforms_list)
+
+    # frontend takes the backend as input, applies a number of layers
+    # and outputs a 1xC tensor where C is the number of class labels in the dataset
+
+    def forward(self, X, C=100):
+        if self.training:
+            X = self.encode(X)
+            out = self.classify(X[-1])
+            return out
+        else:
+            return None
+
+
+    
+
 
 
         
