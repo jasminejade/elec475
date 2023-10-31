@@ -1,3 +1,9 @@
+# elec374 lab3 step1.1 vanilla model
+#
+# Jasmine Klein, 20154586
+# Matthew Valiquette, 20151953
+#
+
 import torch
 import tqdm
 import argparse
@@ -23,7 +29,7 @@ def train(network, train_loader, optimizer, schedule, epochs, n=1, device='cuda'
 
             # calculate forward method for classification here
             output = network(imgs) # forward method
-            loss = model.calc_loss(output, labels)
+            loss = network.calc_loss(output, labels)
 
             optimizer.zero_grad()
             loss.backward()
@@ -59,16 +65,15 @@ parser.add_argument('--training', type=str, default="y")
 args = parser.parse_args()
 
 device = torch.device('cuda')
-network = Vanilla()
-network.to(device=device)
-encoder = network.encoder
-classifier = network.classifier
+model = VanillaModel()
+encoder = model.encoder
+classifier = model.classifier
 
 encoder.load_state_dict(torch.load(args.encoder_pth))
 encoder = nn.Sequential(*list(encoder.children())[:31])
 
-vanilla_model = network(encoder, classifier)
-vanilla_model.to(device=device)
+network = Network(encoder, classifier)
+network.to(device=device)
 
 train_transform = transforms.Compose([transforms.ToTensor()])
 train_set = CIFAR100('./data/cifar100', train=True, download=True, transform=train_transform)
@@ -77,10 +82,10 @@ test_set = CIFAR100('./data/cifar100', train=False, download=True, transform=tra
 train_loader = DataLoader(train_set, batch_size=args.batch, shuffle=True)
 test_loader = DataLoader(test_set, batch_size=args.batch, shuffle=False)
 
-adam = torch.optim.Adam(vanilla_model.classifier.parameters(), lr=1e-4)
+adam = torch.optim.Adam(network.classifier.parameters(), lr=1e-4)
 schedule = lr_scheduler.ExponentialLR(adam, gamma=args.gamma)
 
 if args.training == "y":
-    train(network=vanilla_model, train_loader=train_loader, optimizer=adam, schedule=schedule, epochs=args.epochs)
+    train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule, epochs=args.epochs)
 else:
     test()
