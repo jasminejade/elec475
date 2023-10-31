@@ -1,9 +1,11 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from torchvision import transforms
 
-class VGG:
+# model is based on vgg-19
+class Vanilla:
     
     # vgg backened, encoder from lab2
     encoder = nn.Sequential(
@@ -54,24 +56,24 @@ class VGG:
 
 class model(nn.Module):
     
-    def __init__(self, backend, frontend=None):
+    def __init__(self, encoder, classifier=None):
         super(model, self).__init__()
-        self.backend = backend  # encoder
-        # freeze backend weights
-        for param in self.backend.parameters():
+        self.encoder = encoder # backend
+        # freeze encoder weights
+        for param in self.encoder.parameters():
             param.requires_grad = False
 
-        self.frontend = frontend  # decoder
+        self.classifier = classifier # frontend
 
-        if self.frontend is not None:
+        if self.classifier is not None:
             pass
         else:
-            self.frontend = VGG.classifier
+            self.classifer= Vanilla.classifier
             # initalize frontend weights
-            for param in self.frontend.parameters():
+            for param in self.classifierparameters():
                 nn.init.normal_(param, mean=0.0, std=0.0)
 
-        self.mse_loss = nn.MSELoss()
+        self.cross_entropy_loss = nn.CrossEntropyLoss()
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
 
 
@@ -81,15 +83,13 @@ class model(nn.Module):
     def calc_loss(self, input, target):
         assert (input.size() == target.size())
         assert (target.requires_grad is False)
-        # input_mean, input_std = torch.mean(input)
-        # target_mean, target_std = torch.std(target)
-        return self.mse_loss(input, target)
+        return self.cross_entropy_loss(input, target)
 
     def classify(self, X):
         out = self.features(X)
         out = self.avgpool(out)
         out = torch.flatten(out, 1)
-        out = self.classifier(out) #Classifier is backend
+        out = self.classifier(out)
         return out
 
     # implementation of classification frontend
