@@ -1,1 +1,1 @@
-python vanilla.py -gamma 0.9 -batch 40 -epochs 20 --encoder_pth "encoder.pth" --classifier_pth "classifier.pth" --loss_plot "loss.Vanilla.png" --training "n"
+python vanilla.py --gamma 0.9 --batch 2048 --epochs 20 --encoder_pth "encoder.pth" --classifier_pth "classifier.pth" --loss_plot "loss.Vanilla.png" --training "n"

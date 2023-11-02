@@ -115,7 +115,7 @@ class Network(nn.Module):
         if self.classifier is not None:
             pass
         else:
-            self.classifer= VanillaModel.classifier
+            self.classifer = VanillaModel.classifier
             # initalize frontend weights
             for param in self.classifier.parameters():
                 nn.init.normal_(param, mean=0.0, std=0.0)
@@ -124,18 +124,19 @@ class Network(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
 
     def encode(self, X):
-        return self.backend(X)
+        return self.encoder(X)
 
-    def calc_loss(self, input, target):
-        assert (input.size() == target.size())
-        assert (target.requires_grad is False)
-        return self.cross_entropy_loss(input, target)
+    def calc_loss(self, _input, _target):
+        #assert (_input.size() == _target.size())
+        assert (_target.requires_grad is False)
+        return self.cross_entropy_loss(_input, _target)
 
     def classify(self, X):
-        out = self.features(X)
+        out = self.encode(X)
         out = self.avgpool(out)
         out = torch.flatten(out, 1)
         out = self.classifier(out)
+        out = F.softmax(out, 1)
         return out
 
     # implementation of classification frontend
@@ -148,8 +149,7 @@ class Network(nn.Module):
     # and outputs a 1xC tensor where C is the number of class labels in the dataset
     def forward(self, X, C=100):
         if self.training:
-            X = self.encode(X)
-            out = self.classify(X[-1])
+            out = self.classify(X)
 
             return out
         else:
