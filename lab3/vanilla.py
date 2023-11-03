@@ -84,25 +84,37 @@ def test(network, test_loader, optimizer, schedule, epochs, n=1, device='cuda'):
                 for j in range(len(top5[1][i])):
                     if top5[1][i][j] == labels[i]:
                         top5count += 1
-            #print(f'classified: {classified}/{len(index)}')
+            print(f'classified: {classified}/{len(index)}')
+            print(f'top5classified: {top5count}/{len(index)}')
             total += classified
             top5total += top5count
+    labels = ["accuracy", "error"]
+    acc = [total, 10000-total]
+    top5acc = [top5total, 10000-top5total]
+    plt.subplot(1,2,1)
+    plt.pie(acc, labels=labels)
+    plt.title("Accuracy %"+ str(total*100//10000))
+    plt.subplot(1,2,2)
+    plt.pie(top5acc, labels=labels)
+    plt.title("Top5Accuracy %"+ str(top5total*100//10000))
+    plt.savefig(args.accuracy_plot)
     print(f'total classified: {total}/{10000}')
     print(f'Top5 classified: {top5total}/{10000}')
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gamma', type=float, default=0.9)
-parser.add_argument('--lr', type=float, default=0.01)
+parser.add_argument('--lr', type=float, default=0.1)
 parser.add_argument('--weight_decay', type=float, default=2e-05)
 parser.add_argument('--momentum', type=float, default=0.9)
-parser.add_argument('--num_steps', type=float, default=8)
+parser.add_argument('--num_steps', type=float, default=6)
 parser.add_argument('--epochs', type=int, default=300)
 parser.add_argument('--batch', type=int, default=150)
 parser.add_argument('--encoder_pth', type=str, default="encoder.pth") # vgg
 parser.add_argument('--classifier_pth', type=str, default="sigmoid_classifier.pth")
 parser.add_argument('--loss_plot', type=str, default="loss.VanillaSigmoid.png")
-parser.add_argument('--training', type=str, default="y")
+parser.add_argument('--accuracy_plot', type=str, default="accuracy.VanillaSigmoid.png")
+parser.add_argument('--training', type=str, default="n")
 args = parser.parse_args()
 
 device = torch.device('cuda')
@@ -129,11 +141,11 @@ SGD = optim.SGD(network.classifier.parameters(), lr=args.lr, momentum=args.momen
 schedule2 = lr_scheduler.StepLR(SGD, gamma=args.gamma, step_size=args.epochs//args.num_steps)
 if args.training == "y":
     train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule2, epochs=args.epochs, n=len(train_set))
-# elif args.training == "a":
-#     train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule2, epochs=args.epochs,n=len(train_set))
-#     class_dict = torch.load(args.classifier_pth)
-#     network.classifier.load_state_dict(class_dict)
-#     test(network=network, test_loader=test_loader, optimizer=adam, schedule=schedule, epochs=args.epochs, n=args.batch)
+elif args.training == "a":
+    train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule2, epochs=args.epochs,n=len(train_set))
+    class_dict = torch.load(args.classifier_pth)
+    network.classifier.load_state_dict(class_dict)
+    test(network=network, test_loader=test_loader, optimizer=adam, schedule=schedule, epochs=args.epochs, n=args.batch)
 else:
     class_dict = torch.load(args.classifier_pth)
     network.classifier.load_state_dict(class_dict)
