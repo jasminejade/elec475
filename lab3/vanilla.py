@@ -8,12 +8,14 @@ import torch
 import tqdm
 import argparse
 from matplotlib import pyplot as plt
+import torch.nn as nn
+from torch import optim
 from torchvision.datasets import CIFAR100
 from torch.utils.data import DataLoader
 from torch.optim import lr_scheduler
 from torchvision import transforms
 
-from network import *
+from network import VanillaModel, Network
 
 def train(network, train_loader, optimizer, schedule, epochs, n=1, device='cuda'):
     # load vgg backend pre-trained parameters that were distributed in lab2
@@ -60,6 +62,7 @@ def test(network, test_loader, optimizer, schedule, epochs, n=1, device='cuda'):
     network.classifier.eval()
 
     total = 0
+    top5total = 0
     with torch.no_grad():
         for imgs, labels in test_loader:
             imgs = imgs.to(device=device)
@@ -70,25 +73,36 @@ def test(network, test_loader, optimizer, schedule, epochs, n=1, device='cuda'):
             # for each j array in output, get the index of the largest value
             # this returns an 1 dim array with the class prediction for each j
             index = torch.argmax(output, dim=1) # get index of class with highest probability
-            print(len(labels))
+            top5 = torch.topk(output, 5, dim=1)
+
             classified = 0
+            top5count = 0
             assert (index.size() == labels.size())
             for i in range(0, len(index)):
                 if index[i] == labels[i]:
                     classified += 1
-            print(f'classified: {classified}/{len(index)}')
+                for j in range(len(top5[1][i])):
+                    if top5[1][i][j] == labels[i]:
+                        top5count += 1
+            #print(f'classified: {classified}/{len(index)}')
             total += classified
+            top5total += top5count
     print(f'total classified: {total}/{10000}')
+    print(f'Top5 classified: {top5total}/{10000}')
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gamma', type=float, default=0.9)
-parser.add_argument('--epochs', type=int, default=20)
-parser.add_argument('--batch', type=int, default=2048)
+parser.add_argument('--lr', type=float, default=0.01)
+parser.add_argument('--weight_decay', type=float, default=2e-05)
+parser.add_argument('--momentum', type=float, default=0.9)
+parser.add_argument('--num_steps', type=float, default=8)
+parser.add_argument('--epochs', type=int, default=300)
+parser.add_argument('--batch', type=int, default=150)
 parser.add_argument('--encoder_pth', type=str, default="encoder.pth") # vgg
-parser.add_argument('--classifier_pth', type=str, default="classifier.pth")
-parser.add_argument('--loss_plot', type=str, default="loss.Vanilla.png")
-parser.add_argument('--training', type=str, default="n")
+parser.add_argument('--classifier_pth', type=str, default="sigmoid_classifier.pth")
+parser.add_argument('--loss_plot', type=str, default="loss.VanillaSigmoid.png")
+parser.add_argument('--training', type=str, default="y")
 args = parser.parse_args()
 
 device = torch.device('cuda')
@@ -108,11 +122,18 @@ test_set = CIFAR100('./data/cifar100', train=False, download=True, transform=tra
 train_loader = DataLoader(train_set, batch_size=args.batch, shuffle=True)
 test_loader = DataLoader(test_set, batch_size=args.batch, shuffle=False)
 
-adam = torch.optim.Adam(network.classifier.parameters(), lr=1e-4)
+adam = torch.optim.Adam(network.classifier.parameters(), lr=1e-2)
 schedule = lr_scheduler.ExponentialLR(adam, gamma=args.gamma)
 
+SGD = optim.SGD(network.classifier.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+schedule2 = lr_scheduler.StepLR(SGD, gamma=args.gamma, step_size=args.epochs//args.num_steps)
 if args.training == "y":
-    train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule, epochs=args.epochs, n=args.batch)
+    train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule2, epochs=args.epochs, n=len(train_set))
+# elif args.training == "a":
+#     train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule2, epochs=args.epochs,n=len(train_set))
+#     class_dict = torch.load(args.classifier_pth)
+#     network.classifier.load_state_dict(class_dict)
+#     test(network=network, test_loader=test_loader, optimizer=adam, schedule=schedule, epochs=args.epochs, n=args.batch)
 else:
     class_dict = torch.load(args.classifier_pth)
     network.classifier.load_state_dict(class_dict)

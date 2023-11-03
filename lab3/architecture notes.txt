@@ -1,0 +1,3 @@
+- we could crop our train images for better training
+
+-

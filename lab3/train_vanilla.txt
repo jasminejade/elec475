@@ -1,1 +1,5 @@
-python vanilla.py --gamma 0.9 --batch 40 --epochs 20 --encoder_pth "encoder.pth" --classifier_pth "classifier.pth" --loss_plot "loss.Vanilla.png" --training "y"
+python vanilla.py --gamma 0.9 --batch 2048 --epochs 20 --encoder_pth "encoder.pth" --classifier_pth "sigmoid_classifier.pth" --loss_plot "loss.vanillaSigmoid.png" --training "y"
+
+start "" python vanilla.py --lr 0.1 --weight_decay 2e-05 --gamma 0.9 --momentum 0.9 --num_steps 6 --batch 150 --epochs 200 --encoder_pth "encoder.pth" --classifier_pth "sigmoid_classifier1.pth" --loss_plot "loss.vanillaSigmoid1.png" --accuracy_plt "accuracy.vanillaSigmoid1.png" --training "a"
+
+start "" python vanilla.py --lr 0.01 --weight_decay 2e-05 --gamma 0.9 --momentum 0.9 --num_steps 6 --batch 150 --epochs 200 --encoder_pth "encoder.pth" --classifier_pth "sigmoid_classifier2.pth" --loss_plot "loss.vanillaSigmoid2.png" --accuracy_plt "accuracy.vanillaSigmoid2.png" --training "a"
