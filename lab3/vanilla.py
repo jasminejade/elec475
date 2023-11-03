@@ -107,14 +107,14 @@ parser.add_argument('--gamma', type=float, default=0.9)
 parser.add_argument('--lr', type=float, default=0.1)
 parser.add_argument('--weight_decay', type=float, default=2e-05)
 parser.add_argument('--momentum', type=float, default=0.9)
-parser.add_argument('--num_steps', type=float, default=6)
-parser.add_argument('--epochs', type=int, default=300)
+parser.add_argument('--num_steps', type=float, default=0)
+parser.add_argument('--epochs', type=int, default=10)
 parser.add_argument('--batch', type=int, default=150)
 parser.add_argument('--encoder_pth', type=str, default="encoder.pth") # vgg
-parser.add_argument('--classifier_pth', type=str, default="sigmoid_classifier.pth")
-parser.add_argument('--loss_plot', type=str, default="loss.VanillaSigmoid.png")
-parser.add_argument('--accuracy_plot', type=str, default="accuracy.VanillaSigmoid.png")
-parser.add_argument('--training', type=str, default="n")
+parser.add_argument('--classifier_pth', type=str, default="autotest/vanilla/classifier_test.pth")
+parser.add_argument('--loss_plot', type=str, default="autotest/vanilla/loss.test.png")
+parser.add_argument('--accuracy_plot', type=str, default="autotest/vanilla/accuracy.test.png")
+parser.add_argument('--training', type=str, default="a")
 args = parser.parse_args()
 
 device = torch.device('cuda')
@@ -134,15 +134,19 @@ test_set = CIFAR100('./data/cifar100', train=False, download=True, transform=tra
 train_loader = DataLoader(train_set, batch_size=args.batch, shuffle=True)
 test_loader = DataLoader(test_set, batch_size=args.batch, shuffle=False)
 
-adam = torch.optim.Adam(network.classifier.parameters(), lr=1e-2)
+adam = torch.optim.Adam(network.classifier.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 schedule = lr_scheduler.ExponentialLR(adam, gamma=args.gamma)
 
-SGD = optim.SGD(network.classifier.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
-schedule2 = lr_scheduler.StepLR(SGD, gamma=args.gamma, step_size=args.epochs//args.num_steps)
+#SGD = optim.SGD(network.classifier.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+step_size = args.num_steps if args.num_steps != 0 else 1
+schedule2 = lr_scheduler.StepLR(adam, gamma=args.gamma, step_size=args.epochs//step_size)
 if args.training == "y":
-    train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule2, epochs=args.epochs, n=len(train_set))
+    train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule, epochs=args.epochs, n=len(train_set))
 elif args.training == "a":
-    train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule2, epochs=args.epochs,n=len(train_set))
+    if args.num_steps == 0:
+        train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule, epochs=args.epochs, n=len(train_set))
+    else:
+        train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule2, epochs=args.epochs,n=len(train_set))
     class_dict = torch.load(args.classifier_pth)
     network.classifier.load_state_dict(class_dict)
     test(network=network, test_loader=test_loader, optimizer=adam, schedule=schedule, epochs=args.epochs, n=args.batch)
