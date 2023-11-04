@@ -16,6 +16,7 @@ from torch.optim import lr_scheduler
 from torchvision import transforms
 
 from network import VanillaModel, Network
+from functions import getAccuracy
 
 def train(network, train_loader, optimizer, schedule, epochs, n=1, device='cuda'):
     # load vgg backend pre-trained parameters that were distributed in lab2
@@ -81,40 +82,30 @@ def test(network, test_loader, optimizer, schedule, epochs, n=1, device='cuda'):
             for i in range(0, len(index)):
                 if index[i] == labels[i]:
                     classified += 1
-                for j in range(len(top5[1][i])):
-                    if top5[1][i][j] == labels[i]:
-                        top5count += 1
+                if labels[i] in top5[1][i]:
+                    top5count += 1
             print(f'classified: {classified}/{len(index)}')
             print(f'top5classified: {top5count}/{len(index)}')
             total += classified
             top5total += top5count
-    labels = ["accuracy", "error"]
-    acc = [total, 10000-total]
-    top5acc = [top5total, 10000-top5total]
-    plt.subplot(1,2,1)
-    plt.pie(acc, labels=labels)
-    plt.title("Accuracy %"+ str(total*100//10000))
-    plt.subplot(1,2,2)
-    plt.pie(top5acc, labels=labels)
-    plt.title("Top5Accuracy %"+ str(top5total*100//10000))
-    plt.savefig(args.accuracy_plot)
-    print(f'total classified: {total}/{10000}')
-    print(f'Top5 classified: {top5total}/{10000}')
+
+    blessed, top5bless = getAccuracy(total, top5total, args.accuracy_plot)
+    print(f'total classified: {blessed}\n top5classified: {top5bless}')
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gamma', type=float, default=0.9)
-parser.add_argument('--lr', type=float, default=0.1)
-parser.add_argument('--weight_decay', type=float, default=2e-05)
+parser.add_argument('--lr', type=float, default=0.01)
+parser.add_argument('--weight_decay', type=float, default=2e-04)
 parser.add_argument('--momentum', type=float, default=0.9)
 parser.add_argument('--num_steps', type=float, default=0)
-parser.add_argument('--epochs', type=int, default=10)
-parser.add_argument('--batch', type=int, default=150)
+parser.add_argument('--epochs', type=int, default=200)
+parser.add_argument('--batch', type=int, default=50)
 parser.add_argument('--encoder_pth', type=str, default="encoder.pth") # vgg
-parser.add_argument('--classifier_pth', type=str, default="autotest/vanilla/classifier_test.pth")
-parser.add_argument('--loss_plot', type=str, default="autotest/vanilla/loss.test.png")
-parser.add_argument('--accuracy_plot', type=str, default="autotest/vanilla/accuracy.test.png")
-parser.add_argument('--training', type=str, default="a")
+parser.add_argument('--classifier_pth', type=str, default="classifier_test.pth")
+parser.add_argument('--loss_plot', type=str, default="loss.test.png")
+parser.add_argument('--accuracy_plot', type=str, default="accuracy.test.png")
+parser.add_argument('--training', type=str, default="y")
 args = parser.parse_args()
 
 device = torch.device('cuda')

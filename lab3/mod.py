@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from torch.optim import lr_scheduler
 from torchvision import transforms
 
-from network import *
+from network2 import *
 
 
 def train(network, train_loader, optimizer, schedule, epochs, n=1, device='cuda'):
@@ -31,8 +31,8 @@ def train(network, train_loader, optimizer, schedule, epochs, n=1, device='cuda'
             # calculate forward method for classification here
             output = network(imgs)  # forward method
 
-            #loss = network.calc_loss(output, labels)
-            loss = network.calc_loss_encoder(output, labels)
+            loss = network.calc_loss(output, labels)
+            # loss = network.calc_loss_encoder(output, labels)
 
             optimizer.zero_grad()
             loss.backward()
@@ -44,8 +44,8 @@ def train(network, train_loader, optimizer, schedule, epochs, n=1, device='cuda'
         losses_train += [loss_train / n]
         print("Overall Loss: ", losses_train[-1])
 
-    #torch.save(network.classifier.state_dict(), args.classifier_pth)
-    torch.save(network.encoder.state_dict(), args.encoder_pth)
+    torch.save(network.classifier.state_dict(), args.classifier_pth)
+    # torch.save(network.encoder.state_dict(), args.encoder_pth)
     plt.plot(losses_train)
     plt.xlabel('epochs')
     plt.ylabel('losses')
@@ -81,9 +81,9 @@ def test(network, test_loader, optimizer, schedule, epochs, n=1, device='cuda'):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gamma', type=float, default=0.9)
-parser.add_argument('--epochs', type=int, default=35)
-parser.add_argument('--batch', type=int, default=10000)
-parser.add_argument('--encoder_pth', type=str, default="mod_encoder.pth") # vgg
+parser.add_argument('--epochs', type=int, default=25)
+parser.add_argument('--batch', type=int, default=200)
+parser.add_argument('--encoder_pth', type=str, default="encoder.pth") # vgg
 parser.add_argument('--classifier_pth', type=str, default="mod_classifier.pth")
 parser.add_argument('--loss_plot', type=str, default="loss.Mod.png")
 parser.add_argument('--training', type=str, default="y")
@@ -94,6 +94,9 @@ model = ArchitecturalMod()
 encoder = model.encoder
 classifier = model.classifier
 
+encoder.load_state_dict(torch.load(args.encoder_pth))
+encoder = nn.Sequential(*list(encoder.children())[:31])
+
 network = Network2(encoder, classifier)
 
 train_transform = transforms.Compose([transforms.ToTensor()])
@@ -103,11 +106,11 @@ test_set = CIFAR100('./data/cifar100', train=False, download=True, transform=tra
 train_loader = DataLoader(train_set, batch_size=args.batch, shuffle=True)
 test_loader = DataLoader(test_set, batch_size=args.batch, shuffle=False)
 
-adam = torch.optim.Adam(network.classifier.parameters(), lr=1e-4)
+adam = torch.optim.Adam(network.classifier.parameters(), lr=0.01, weight_decay=1e-04)
 schedule = lr_scheduler.ExponentialLR(adam, gamma=args.gamma)
 
 if args.training == "y":
-    train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule, epochs=args.epochs, n=args.batch)
+    train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule, epochs=args.epochs, n=len(train_set))
 else:
     encoder.load_state_dict(torch.load(args.encoder_pth))
     encoder = nn.Sequential(*list(encoder.children())[:31])
@@ -115,4 +118,4 @@ else:
     class_dict = torch.load(args.classifier_pth)
     classifier.load_state_dict(class_dict)
 
-    test(network=network, test_loader=test_loader, optimizer=adam, schedule=schedule, epochs=args.epochs, n=args.batch)
+    test(network=network, test_loader=test_loader, optimizer=adam, schedule=schedule, epochs=args.epochs, n=len(train_set))
