@@ -1,0 +1,1 @@
+python sales.py --gamma 0.9 --epochs 25 --batch 150 --sales_pth "NetSales.pth" --loss_plot "loss.Sales.png" --training "y"

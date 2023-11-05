@@ -12,27 +12,22 @@ from torch.optim import lr_scheduler
 from torchvision import transforms
 
 from network3 import *
-
+from functions import *
 
 def train(network, train_loader, optimizer, schedule, epochs, n=1, device='cuda'):
     # load NetSales backend pre-trained parameters that were distributed in lab2
     # or make your own with random weights
     network.to(device=device)
-    #network.classifier.train()
-    network.encoder.train()
+    network.train()
     losses_train = []
     for i in tqdm.tqdm(range(epochs)):
         loss_train = 0.0
         for imgs, labels in train_loader:
             imgs = imgs.to(device=device)
             labels = labels.to(device=device)
-            # print(imgs, labels)
 
-            # calculate forward method for classification here
             output = network(imgs)  # forward method
-
             loss = network.calc_loss(output, labels)
-            # loss = network.calc_loss_encoder(output, labels)
 
             optimizer.zero_grad()
             loss.backward()
@@ -44,19 +39,18 @@ def train(network, train_loader, optimizer, schedule, epochs, n=1, device='cuda'
         losses_train += [loss_train / n]
         print("Overall Loss: ", losses_train[-1])
 
-    torch.save(network.classifier.state_dict(), args.classifier_pth)
-    # torch.save(network.encoder.state_dict(), args.encoder_pth)
+    torch.save(network.state_dict(), args.sales_pth)
     plt.plot(losses_train)
     plt.xlabel('epochs')
     plt.ylabel('losses')
-    plt.title(f'architecture model, batch size {n}')
+    plt.title(f'architecture model, dataset size {n}')
 
     plt.savefig(args.loss_plot)
     plt.show()
 
 def test(network, test_loader, optimizer, schedule, epochs, n=1, device='cuda'):
     network.to(device=device)
-    network.classifier.eval()
+    network.eval()
 
     total = 0
     with torch.no_grad():
@@ -83,21 +77,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--gamma', type=float, default=0.9)
 parser.add_argument('--epochs', type=int, default=25)
 parser.add_argument('--batch', type=int, default=200)
-parser.add_argument('--encoder_pth', type=str, default="encoder.pth") # vgg
-parser.add_argument('--classifier_pth', type=str, default="mod_classifier.pth")
-parser.add_argument('--loss_plot', type=str, default="loss.Mod.png")
+parser.add_argument('--sales_pth', type=str, default="NetSales.pth")
+parser.add_argument('--loss_plot', type=str, default="loss.Sales.png")
 parser.add_argument('--training', type=str, default="y")
 args = parser.parse_args()
 
 device = torch.device('cuda')
-model = NetSales()
-# encoder = model.encoder
-# classifier = model.classifier
-#
-# encoder.load_state_dict(torch.load(args.encoder_pth))
-# encoder = nn.Sequential(*list(encoder.children())[:31])
-#
-# network = Network2(encoder, classifier)
+network = NetSales(groupSize=[6,6,12,9], numClasses=100)
 
 train_transform = transforms.Compose([transforms.ToTensor()])
 train_set = CIFAR100('./data/cifar100', train=True, download=True, transform=train_transform)
@@ -106,16 +92,11 @@ test_set = CIFAR100('./data/cifar100', train=False, download=True, transform=tra
 train_loader = DataLoader(train_set, batch_size=args.batch, shuffle=True)
 test_loader = DataLoader(test_set, batch_size=args.batch, shuffle=False)
 
-adam = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=1e-04)
+adam = torch.optim.Adam(network.parameters(), lr=0.1, weight_decay=1e-04)
 schedule = lr_scheduler.ExponentialLR(adam, gamma=args.gamma)
 
 if args.training == "y":
-    train(network=model, train_loader=train_loader, optimizer=adam, schedule=schedule, epochs=args.epochs, n=len(train_set))
+    train(network=network, train_loader=train_loader, optimizer=adam, schedule=schedule, epochs=args.epochs, n=len(train_set))
 else:
-    encoder.load_state_dict(torch.load(args.encoder_pth))
-    encoder = nn.Sequential(*list(encoder.children())[:31])
-
-    class_dict = torch.load(args.classifier_pth)
-    classifier.load_state_dict(class_dict)
-
+    network.load_state_dict(torch.load(args.sales_pth))
     test(network=network, test_loader=test_loader, optimizer=adam, schedule=schedule, epochs=args.epochs, n=len(train_set))
