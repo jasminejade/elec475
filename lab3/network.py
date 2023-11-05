@@ -44,11 +44,11 @@ class VanillaModel:
     classifier = nn.Sequential(
         nn.Linear(512 * 7 * 7, 4096),
         nn.ReLU(True),
-        nn.Dropout(0.5),
+        # nn.Dropout(0.5),
         nn.Linear(4096, 4096),
         nn.Sigmoid(),
         # nn.Softmax(),
-        nn.Dropout(0.5),
+        # nn.Dropout(0.5),
         nn.Linear(4096, 100), #Output 1xC size tensor for classification
     )
 
