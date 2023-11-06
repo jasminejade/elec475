@@ -13,11 +13,11 @@ class BottleBlock(nn.Module):
         self.batchNorm1 = nn.BatchNorm2d(outChannels)
 
         # operation 2
-        self.conv2 = nn.Conv2d(inChannels, outChannels, kernel_size=3, stride=stride, padding=1)
+        self.conv2 = nn.Conv2d(outChannels, outChannels, kernel_size=3, stride=stride, padding=1)
         self.batchNorm2 = nn.BatchNorm2d(outChannels)
 
         # operation 3
-        self.conv3 = nn.Conv2d(inChannels, outChannels * self.expansion, kernel_size=1, stride=1, padding=0)
+        self.conv3 = nn.Conv2d(outChannels, outChannels * self.expansion, kernel_size=1, stride=1, padding=0)
         self.batchNorm3 = nn.BatchNorm2d(outChannels * self.expansion)
 
         self.downsample1 = downsample1
@@ -54,7 +54,7 @@ class DimBlock(nn.Module):
         self.batchNorm1 = nn.BatchNorm2d(outChannels)
 
         # operation 2
-        self.conv2 = nn.Conv2d(inChannels, outChannels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.conv2 = nn.Conv2d(outChannels, outChannels, kernel_size=3, stride=stride, padding=1, bias=False)
         self.batchNorm2 = nn.BatchNorm2d(outChannels)
 
         self.downsample1 = downsample1
@@ -92,13 +92,13 @@ class NetSales(nn.Module):
         # layer groups
         self.bottleGroup1 = self.makeGroup(BottleBlock, groupSize[0], depth=64, stride=1)
 
-        self.dimGroup2 = self.makeGroup(DimBlock, numBlocks=2, depth=128, stride=2)
+        self.dimGroup2 = self.makeGroup(DimBlock, numBlocks=1, depth=256, stride=1)
         self.bottleGroup2 = self.makeGroup(BottleBlock, groupSize[1], depth=128, stride=2)
 
-        self.dimGroup3 = self.makeGroup(DimBlock, numBlocks=2, depth=256, stride=2)
+        self.dimGroup3 = self.makeGroup(DimBlock, numBlocks=1, depth=512, stride=1)
         self.bottleGroup3 = self.makeGroup(BottleBlock, groupSize[2], depth=256, stride=2)
 
-        self.dimGroup4 = self.makeGroup(DimBlock, numBlocks=2, depth=512, stride=2)
+        self.dimGroup4 = self.makeGroup(DimBlock, numBlocks=1, depth=1024, stride=1)
         self.bottleGroup4 = self.makeGroup(BottleBlock, groupSize[3], depth=512, stride=2)
 
         self.layerGroup1 = nn.Sequential(*self.bottleGroup1)
@@ -111,8 +111,10 @@ class NetSales(nn.Module):
         self.fc2 = nn.Linear(4096, 4096)
         self.fc3 = nn.Linear(4096, numClasses)
 
-        self.avgool = nn.AdaptiveAvgPool2d((1, 1))
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.cross_entropy_loss = nn.CrossEntropyLoss()
+        self.sigmoid = nn.Sigmoid()
+        self.softmax = nn.Softmax(dim=1)
 
     def calc_loss(self, _input, _target):
         assert (_target.requires_grad is False)
@@ -121,7 +123,7 @@ class NetSales(nn.Module):
     def forward(self, x):
         x = self.relu(self.batchNorm1(self.conv1(x)))
         x = self.maxPool(x)
-        print(x)
+        # print(x)
 
         x = self.layerGroup1(x)
         x = self.layerGroup2(x)
@@ -140,8 +142,8 @@ class NetSales(nn.Module):
         x = x.reshape(x.shape[0], -1)
 
         x = self.relu(self.fc1(x))
-        x = nn.Sigmoid(self.fc2(x))
-        x = nn.Softmax(self.fc1(x))
+        x = self.sigmoid(self.fc2(x))
+        x = self.softmax(self.fc3(x))
 
         return x
 
@@ -156,7 +158,7 @@ class NetSales(nn.Module):
         """
         downsample2 = None
         layers = []
-
+        #
         if stride != 1 or self.inChannels != depth*SalesBlock.expansion:    # if layer changing size
             downsample2 = nn.Sequential(
                 nn.Conv2d(self.inChannels, depth * SalesBlock.expansion, kernel_size=1, stride=stride),
@@ -168,5 +170,24 @@ class NetSales(nn.Module):
 
         for i in range(numBlocks-1):
             layers.append(SalesBlock(self.inChannels, depth))
-        print(layers)
+
+        # My fucked up one
+        # if stride != 1 or self.inChannels != depth*SalesBlock.expansion:    # if layer changing size
+        #     downsample2 = nn.Sequential(
+        #         nn.Conv2d(self.inChannels, depth * SalesBlock.expansion, kernel_size=1, stride=stride),
+        #         nn.BatchNorm2d(depth * SalesBlock.expansion)
+        #     )
+
+        # for i in range(numBlocks-1):
+        #     layers.append(SalesBlock(self.inChannels, depth))
+        #
+        # layers.append(SalesBlock(self.inChannels, depth, downsample1=downsample2, stride=stride))
+        # self.inChannels = depth * SalesBlock.expansion
+        #
+
+
+
+
+
+        # print(layers)
         return layers
