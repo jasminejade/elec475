@@ -19,7 +19,7 @@ def getAccuracy(total, top5total, figtitle):
 
     return blessed, top5bless
 
-def train_transform():
+def train_transformer():
     transform_list = transforms.Compose([
         transforms.RandomHorizontalFlip(),
         transforms.RandomCrop(32, padding=4),

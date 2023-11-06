@@ -90,7 +90,7 @@ class NetSales(nn.Module):
         self.relu = nn.ReLU()
 
         # layer groups
-        self.bottleGroup1 = self.makeGroup(BottleBlock, groupSize[0], depth=64)
+        self.bottleGroup1 = self.makeGroup(BottleBlock, groupSize[0], depth=64, stride=1)
 
         self.dimGroup2 = self.makeGroup(DimBlock, numBlocks=2, depth=128, stride=2)
         self.bottleGroup2 = self.makeGroup(BottleBlock, groupSize[1], depth=128, stride=2)
@@ -98,8 +98,13 @@ class NetSales(nn.Module):
         self.dimGroup3 = self.makeGroup(DimBlock, numBlocks=2, depth=256, stride=2)
         self.bottleGroup3 = self.makeGroup(BottleBlock, groupSize[2], depth=256, stride=2)
 
-        self.dimGroup4 = self.makeGroup(DimBlock, numBlocks=2, depth=256, stride=2)
+        self.dimGroup4 = self.makeGroup(DimBlock, numBlocks=2, depth=512, stride=2)
         self.bottleGroup4 = self.makeGroup(BottleBlock, groupSize[3], depth=512, stride=2)
+
+        self.layerGroup1 = nn.Sequential(*self.bottleGroup1)
+        self.layerGroup2 = nn.Sequential(*(self.dimGroup2 + self.bottleGroup2))
+        self.layerGroup3 = nn.Sequential(*(self.dimGroup3 + self.bottleGroup3))
+        self.layerGroup4 = nn.Sequential(*(self.dimGroup4 + self.bottleGroup4))
 
         # fully connected layers
         self.fc1 = nn.Linear(512*BottleBlock.expansion, 4096)
@@ -116,14 +121,20 @@ class NetSales(nn.Module):
     def forward(self, x):
         x = self.relu(self.batchNorm1(self.conv1(x)))
         x = self.maxPool(x)
+        print(x)
 
-        x = self.bottleGroup1(x)
-        x = self.dimGroup2(x)
-        x = self.bottleGroup2(x)
-        x = self.dimGroup3(x)
-        x = self.bottleGroup3(x)
-        x = self.dimGroup4(x)
-        x = self.bottleGroup4(x)
+        x = self.layerGroup1(x)
+        x = self.layerGroup2(x)
+        x = self.layerGroup3(x)
+        x = self.layerGroup4(x)
+
+        # x = self.bottleGroup1(x)
+        # x = self.dimGroup2(x)
+        # x = self.bottleGroup2(x)
+        # x = self.dimGroup3(x)
+        # x = self.bottleGroup3(x)
+        # x = self.dimGroup4(x)
+        # x = self.bottleGroup4(x)
 
         x = self.avgpool(x)
         x = x.reshape(x.shape[0], -1)
@@ -141,7 +152,7 @@ class NetSales(nn.Module):
         :param numBlocks: num blocks for group
         :param depth: depth of group
         :param stride: stride
-        :return: a group of blocks
+        :return: a list group of blocks
         """
         downsample2 = None
         layers = []
@@ -157,5 +168,5 @@ class NetSales(nn.Module):
 
         for i in range(numBlocks-1):
             layers.append(SalesBlock(self.inChannels, depth))
-
-        return nn.Sequential(*layers)
+        print(layers)
+        return layers

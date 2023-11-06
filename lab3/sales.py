@@ -25,11 +25,10 @@ def train(network, train_loader, optimizer, schedule, epochs, n=1, device='cuda'
         for imgs, labels in train_loader:
             imgs = imgs.to(device=device)
             labels = labels.to(device=device)
-
-            output = network(imgs)  # forward method
-            loss = network.calc_loss(output, labels)
-
             optimizer.zero_grad()
+            output = network(imgs)  # forward method
+
+            loss = network.calc_loss(output, labels)
             loss.backward()
             optimizer.step()
 
