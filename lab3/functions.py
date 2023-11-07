@@ -29,3 +29,20 @@ def train_transformer():
 
     return transform_list
 
+
+def testImage(model, eval_set):
+    model.to(device='cuda')
+    model.eval()
+
+    index = int(input("Pleas enter a number between 1-10000: "))
+    img = eval_set[index][0]
+    label = eval_set[index][1]
+
+    output = model(img)
+
+    fig, ax = plt.subplots(1,1)
+    fig.suptitle(f'test image is class: {label} , netSales guess is:{output}')
+    ax[0].imshow(img)
+
+    plt.show()
+

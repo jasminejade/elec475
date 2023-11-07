@@ -107,9 +107,9 @@ class NetSales(nn.Module):
         self.layerGroup4 = nn.Sequential(*(self.dimGroup4 + self.bottleGroup4))
 
         # fully connected layers
-        self.fc1 = nn.Linear(512*BottleBlock.expansion, 4096)
-        self.fc2 = nn.Linear(4096, 4096)
-        self.fc3 = nn.Linear(4096, numClasses)
+        self.fc1 = nn.Linear(512*BottleBlock.expansion, numClasses)
+        # self.fc2 = nn.Linear(4096, 4096)
+        # self.fc3 = nn.Linear(4096, numClasses)
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.cross_entropy_loss = nn.CrossEntropyLoss()
@@ -141,9 +141,9 @@ class NetSales(nn.Module):
         x = self.avgpool(x)
         x = x.reshape(x.shape[0], -1)
 
-        x = self.relu(self.fc1(x))
-        x = self.sigmoid(self.fc2(x))
-        x = self.softmax(self.fc3(x))
+        x = self.fc1(x)
+        # x = self.sigmoid(self.fc2(x))
+        # x = self.softmax(self.fc3(x))
 
         return x
 

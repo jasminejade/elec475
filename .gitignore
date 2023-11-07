@@ -1,3 +1,9 @@
 datasets
 data
-lab3/vanilla_classifier.pth
+lab3/*classifier.pth
+lab3/*/*classifier_*_.pth
+lab3/autotest/*
+lab3/backup/*
+NetSales.pth
+NetSales*.pth
+vanilla_classifier*.pth
