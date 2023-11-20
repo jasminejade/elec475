@@ -71,50 +71,44 @@ def train(network, train_loader, optimizer, schedule, epochs, n=1, device='cuda'
     plt.savefig(args.loss_plot)
     plt.show()
 
-def test(network, test_loader, optimizer, schedule, epochs, n=1, device='cuda'):
+def test(network, test_loader, device='cuda'):
     network.to(device=device)
     network.eval()
 
     total = 0
     top5total=0
     with torch.no_grad():
-        for image, label in test_loader:
-            image = image.to(device=device)
-            label = label.to(device=device)
+        for imgs, labels in test_loader:
+            imgs = imgs.to(device=device)
+            labels = labels.to(device=device)
 
-            output = network(image)  # forward method
+            output = network(imgs)  # forward method
 
-
-
-            index = torch.argmax(output, dim=1)  # get index of class with highest probability
-            top5 = torch.topk(output, 5, dim=1)
-
+            # for each j array in output, get the index of the largest value
+            # this returns an 1 dim array with the class prediction for each j
+            predict = torch.round(torch.sigmoid(output))  # get index of class with highest probability
             classified = 0
-            top5count = 0
-            assert (index.size() == labels.size())
-            for i in range(0, len(index)):
-                if index[i] == labels[i]:
+            for i in range(0, len(predict)):
+                if predict[i] == labels[i]:
                     classified += 1
-                if labels[i] in top5[1][i]:
-                    top5count += 1
-            print(f'classified: {classified}/{len(index)}')
-            print(f'top5classified: {top5count}/{len(index)}')
-            total += classified
-            top5total += top5count
+            total+= classified
+            print(f'classified: {classified}/{len(predict)}')
 
-    print(f'total classified: {total}/{10000}')
-    blessed, top5bless = getAccuracy(total, top5total, args.accuracy_plot)
-    print(f'total classified: {blessed}\n top5classified: {top5bless}')
+    print(f'total classified: {total}/{len(test_set)}')
+    print(f'% Accuracy: {total/len(test_set)*100}%')
+    # blessed = getAccuracy(total, args.accuracy_plot)
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gamma', type=float, default=0.9)
-parser.add_argument('--epochs', type=int, default=1)
-parser.add_argument('--batch', type=int, default=512)
-parser.add_argument('--sales_pth', type=str, default="NetSales.pth")
-parser.add_argument('--loss_plot', type=str, default="loss.Sales.png")
-parser.add_argument('--training', type=str, default="y")
-parser.add_argument('--accuracy_plot', type=str, default="accuracy.netSales.png")
+parser.add_argument('--epochs', type=int, default=15)
+parser.add_argument('--batch', type=int, default=128)
+parser.add_argument('--sales_pth', type=str, default="lab4_step3.pth")
+parser.add_argument('--loss_plot', type=str, default="loss.lab4_step3.png")
+# parser.add_argument('--sales_pth', type=str, default="NetSales.pth")
+# parser.add_argument('--loss_plot', type=str, default="loss.Sales.png")
+parser.add_argument('--training', type=str, default="n")
+parser.add_argument('--accuracy_plot', type=str, default="accuracy.lab4_1.3.png")
 parser.add_argument('--train_dir', type=str, default='./data/Kitti8_ROIs/train/')
 parser.add_argument('--test_dir', type=str, default='./data/Kitti8_ROIs/test/')
 args = parser.parse_args()
@@ -145,5 +139,5 @@ if args.training == "y":
     train(network=network, train_loader=train_loader, optimizer=adam, schedule=None, epochs=args.epochs, n=len(train_set))
 else:
     network.load_state_dict(torch.load(args.sales_pth))
-    test(network=network, test_loader=test_loader, optimizer=adam, schedule=None, epochs=args.epochs, n=len(train_set))
+    test(network=network, test_loader=test_loader)
     # testImage(network, test_set)
