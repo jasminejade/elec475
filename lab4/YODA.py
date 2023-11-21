@@ -52,7 +52,14 @@ class YODA(nn.Module):
 
         centers = self.anchors.calc_anchor_centers(self.image.shape, self.anchors.grid)
         self.ROIs, self.boxes = self.anchors.get_anchor_ROIs(self.image, centers, self.anchors.shapes)
-        
+        box_coor = np.asarray(self.boxes)
+        with open('box_coor.txt', 'w') as f:
+            for x in box_coor:
+                np.savetxt(f, x)
+        y = np.loadtxt('box_coor.txt', dtype=int)
+        print(y)
+        print(y[0])
+        print(y[1])
         # KittiAnchors get_anchots_ROIs
         # for j in range(len(centers)):
         #     center = centers[j]
@@ -76,49 +83,49 @@ class YODA(nn.Module):
         ROI_IoUs = []
         for idx in range(len(self.ROIs)):
             ROI_IoUs += [self.anchors.calc_max_IoU(self.boxes[idx], car_ROIs)]
-        
+        print(self.boxes)
         image2 = self.image.copy()
-        # for k in range(len(self.boxes)):
-        #     # if ROI_IoUs[k] > self.IoU_threshold:
-        #     #     box = self.boxes[k]
-        #     #     pt1 = (box[0][1],box[0][0])
-        #     #     pt2 = (box[1][1],box[1][0])
-        #     #     cv2.rectangle(image2, pt1, pt2, color=(0, 255, 255))
+        for k in range(len(self.boxes)):
+            if ROI_IoUs[k] > self.IoU_threshold:
+                box = self.boxes[k]
+                pt1 = (box[0][1],box[0][0])
+                pt2 = (box[1][1],box[1][0])
+                cv2.rectangle(image2, pt1, pt2, color=(0, 255, 255))
 
-        #     print(ROI_IoUs[k])
-        #     box = self.boxes[k]
-        #     pt1 = (box[0][1],box[0][0])
-        #     pt2 = (box[1][1],box[1][0])
-        #     cv2.rectangle(image2, pt1, pt2, color=(0, 255, 255))
-        #     cv2.imshow('boxes', image2)
-        #     key = cv2.waitKey(0)
-        #     if key == ord('x'):
-        #         break
-        for j in range(len(self.boxes)):
-            coor1 = self.boxes[j][0]
-            coor2 = self.boxes[j][1]
-            minx = int(coor1[0])
-            miny = int(coor1[1])
-            maxx = int(coor2[0])
-            maxy = int(coor2[1])
-            roi = self.image[miny:maxy,minx:maxx]
-            print(roi)
-            for k in range(len(self.anchors.shapes)):
-                shape = self.anchors.shapes[k]
-                dy = int(((maxy - miny)-shape[0])/2)
-                dx = int(((maxx - minx)-shape[1])/2)
-                miny2 = miny + dy
-                maxy2 = maxy - dy
-                minx2 = minx + dx
-                maxx2 = maxx - dx
-                
-                # cv2.rectangle(roi, (minx2,miny2), (maxx2, maxy2), (0,0,255))
-                # cv2.imshow('image', image2)
-                # cv2.imshow('roi', roi)
-    
-                # key = cv2.waitKey(0)
-                # if key == ord('x'):
-                #     break
+            # print(ROI_IoUs[k])
+            box = self.boxes[k]
+            pt1 = (box[0][1],box[0][0])
+            pt2 = (box[1][1],box[1][0])
+            cv2.rectangle(image2, pt1, pt2, color=(0, 255, 255))
+            cv2.imshow('boxes', image2)
+            key = cv2.waitKey(0)
+            if key == ord('x'):
+                break
+        # for j in range(len(self.boxes)):
+        #     coor1 = self.boxes[j][0]
+        #     coor2 = self.boxes[j][1]
+        #     minx = int(coor1[0])
+        #     miny = int(coor1[1])
+        #     maxx = int(coor2[0])
+        #     maxy = int(coor2[1])
+        #     roi = self.image[miny:maxy,minx:maxx]
+        #     print(roi)
+        #     for k in range(len(self.anchors.shapes)):
+        #         shape = self.anchors.shapes[k]
+        #         dy = int(((maxy - miny)-shape[0])/2)
+        #         dx = int(((maxx - minx)-shape[1])/2)
+        #         miny2 = miny + dy
+        #         maxy2 = maxy - dy
+        #         minx2 = minx + dx
+        #         maxx2 = maxx - dx
+        #
+        #         cv2.rectangle(roi, (minx2,miny2), (maxx2, maxy2), (0,255,255))
+        #         cv2.imshow('image', image2)
+        #         #cv2.imshow('roi', roi)
+        #
+        #         key = cv2.waitKey(0)
+        #         if key == ord('x'):
+        #             break
 
     def batch_ROIs(self, ROIs, shape):
         print(shape)
@@ -170,10 +177,10 @@ class YODA(nn.Module):
         minibatch, minibatch_boxes = self.minibatch_ROIs(self.ROIs, self.boxes, self.image.shape, 48)
         #print(minibatch,'\n', minibatch_boxes)
         
-        for b in minibatch:
-            plt.imshow(b)
-            
-        plt.show()
+        # for b in minibatch:
+        #     plt.imshow(b)
+        #
+        # plt.show()
             
         
     def display(self, batchROIs):
@@ -190,5 +197,5 @@ class YODA(nn.Module):
         #             break
         
 model = YODA()
-model.subdivide('./data/Kitti8/000008.png', './data/Kitti8/000008.txt')
+model.subdivide('./data/Kitti8/test/image/006026.png', './data/Kitti8/test/label/006026.txt')
 model.buildBatch()
