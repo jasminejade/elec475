@@ -19,6 +19,8 @@ from PIL import Image, ImageDraw
 from functions import *
 from custom_dataset import *
 
+from KittiAnchors import *
+
 def train_transform():
     transforms_list = transforms.Compose([
         transforms.Resize(size=(224,224)),
@@ -103,6 +105,12 @@ def test(network, test_loader, device='cuda'):
     print(f'% Accuracy: {total/len(test_set)*100}%')
     # blessed = getAccuracy(total, args.accuracy_plot)
 
+def getBoxes(image_path):
+    image = cv2.imread(image_path, cv2.IMREAD_COLOR)    
+    anchors = Anchors()
+    centers = anchors.calc_anchor_centers(image.shape, anchors.grid)
+    ROIs, boxes = anchors.get_anchor_ROIs(image, centers, anchors.shapes)
+    return image, boxes
 
 def test2(network, test_loader, device='cuda', box_coor=None):
 
@@ -141,23 +149,33 @@ def test2(network, test_loader, device='cuda', box_coor=None):
                     img_pth = './data/Kitti8/test/image/0060' + str(imgNum) + '.png'
                 else:
                     img_pth = './data/Kitti8/test/image/006' + str(imgNum) + '.png'
-                image3 = cv2.imread(img_pth, cv2.IMREAD_COLOR)
-               # image2 = Image.open(img_pth).convert('RGB')
-                #draw = ImageDraw.Draw(image2)
-                for j in range(0,len(boxes)-1,2):
-                    print(box_coor[j])
-                    if boxes[j] == 1:
-                        pt1 = (box_coor[j,0], box_coor[j,1])
-                        pt2 = (box_coor[j+1,0], box_coor[j+1,1])
-                        print(pt1, pt2)
-                       # draw.rectangle(pt1, pt2)
-                        cv2.rectangle(image3, box_coor[j], box_coor[j+1], color=(0, 255, 255))
+                    
+                image, boxes = getBoxes(img_pth)
+                image2 = image.copy()
+                for k in range(len(boxes)):
+                    if k == i:
+                        box = boxes[k]
+                        pt1 = (box[0][1],box[0][0])
+                        pt2 = (box[1][1],box[1][0])
+                        cv2.rectangle(image2, pt1, pt2, color=(0, 255, 255))
+                cv2.imshow('boxes', image2)
+            #     image3 = cv2.imread(img_pth, cv2.IMREAD_COLOR)
+            #    # image2 = Image.open(img_pth).convert('RGB')
+            #     #draw = ImageDraw.Draw(image2)
+            #     for j in range(0,len(boxes)-1,2):
+            #         print(box_coor[j])
+            #         if boxes[j] == 1:
+            #             pt1 = (box_coor[j,0], box_coor[j,1])
+            #             pt2 = (box_coor[j+1,0], box_coor[j+1,1])
+            #             print(pt1, pt2)
+            #            # draw.rectangle(pt1, pt2)
+            #             cv2.rectangle(image3, box_coor[j], box_coor[j+1], color=(0, 255, 255))
 
-                    cv2.imshow('boxes', image3)
+            #         cv2.imshow('boxes', image3)
 
-                    key = cv2.waitKey(0)
-                    if key == ord('x'):
-                        break
+            #         key = cv2.waitKey(0)
+            #         if key == ord('x'):
+            #             break
                 #image2.show()
                 # cv2.imshow('boxes', image3)
                 total += classified
