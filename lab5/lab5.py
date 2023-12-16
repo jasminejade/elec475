@@ -7,7 +7,7 @@ from torch.optim import lr_scheduler
 
 
 from train import train, train_transform
-from test import test
+from test import test, test2
 from custom_dataset import custom_dataset
 
 
@@ -17,6 +17,7 @@ parser.add_argument('--epochs', type=int, default=20)
 parser.add_argument('--batch', type=int, default=64)
 parser.add_argument('--net_pth', type=str, default="model.lab5.pth")
 parser.add_argument('--loss_plot', type=str, default="loss.lab5.png")
+parser.add_argument('--both_plot', type=str, default='test_train_loss.lab5.png')
 parser.add_argument('--training', type=str, default="n")
 parser.add_argument('--accuracy_plot', type=str, default="accuracy.lab5.png")
 parser.add_argument('--images_dir', type=str, default='./oxford-iiit-pet-noses/oxford-iiit-pet-noses/images-original/images/')
@@ -50,11 +51,11 @@ SGD = torch.optim.SGD(network.parameters(), lr=5e-04, weight_decay=1e-05)
 schedule = lr_scheduler.ExponentialLR(SGD, gamma=args.gamma)
 # schedule2 = lr_scheduler.ReduceLROnPlateau(SGD, factor = 0.1, patience=5)
 
-if args.training == "y":
-    train(network=network, train_loader=train_loader, optimizer=SGD, schedule=schedule, epochs=args.epochs, n=len(train_set), device='cuda', args=args)
-else:
+if args.training == "y":    # train network
+    train(network=network, train_loader=train_loader, optimizer=SGD, schedule=schedule, epochs=args.epochs, n=len(train_set), device='cuda', args=args, test_loader=test_loader)
+elif args.training == "n":  # test one image, will ask you to input index
     network.load_state_dict(torch.load(args.net_pth))
-
-    test(network=network, test_loader=test_loader)
-
-    # testImage(network, test_set)
+    test2(network=network, test_loader=test_loader, eval_set=test_set, n=len(test_set), device='cuda', args=args)
+elif args.training == "e":  # evaluate network with test set
+    network.load_state_dict(torch.load(args.net_pth))
+    test(network=network, test_loader=test_loader, n=len(test_set), device='cuda', args=args)

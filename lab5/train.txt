@@ -1,0 +1,1 @@
+python lab5.py --training y

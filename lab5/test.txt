@@ -1,0 +1,5 @@
+# test single image
+python lab5.py --training n
+
+# evaluate entire test set
+python lab5.py --training e

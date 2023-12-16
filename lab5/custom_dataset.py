@@ -65,6 +65,9 @@ class custom_dataset(Dataset):
         coords[0] = coords[0] * (224 / size[0])
         coords[1] = coords[1] * (224 / size[1])
 
+        # coords[0] = coords[0] * (224 / size[0])
+        # coords[1] = coords[1] * (224 / size[1])
+
         if self.transform:
             image = self.transform(image)
         #print(self.images[1])
